@@ -1,0 +1,268 @@
+---
+title: DATA 606 Data Project Proposal
+author: "Vinayak Kamath"
+date: "3/27/2020"
+output:
+  html_document:
+    highlight: pygments
+    theme: cerulean
+    toc: TRUE
+    toc_depth: 4    
+    toc_float: 
+      collapsed: true
+      smooth_scroll: true
+      number_sections: true    
+  pdf_document: default
+---
+
+
+### Data Preparation
+
+Life Expectancy and Happiness; We will use the following data-sets from Kaggle on relating happiness with life expectancy. Life expectancy could be linked to many factors like monetary or physical needs or living condition or external factors with politics or like. Over here we will aim to correlate life expectancy with happiness as a key factor.
+
+[Life Expectancy (WHO)](https://www.kaggle.com/albeffe/life-expectancy-per-country-from-1543-to-2019)  
+[World Happiness Report](https://www.kaggle.com/unsdsn/world-happiness/data)
+
+
+```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+library(readr)
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+```{r load-raw-data, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+# Load data from the life-expectancy csv file:
+theUrl.lifeExpectancy <- 'https://raw.githubusercontent.com/kamathvk1982/Data606-FinalProject/master/data/life-expectancy.csv'
+lifeExp.df <- read_csv(theUrl.lifeExpectancy,  na = c("", "NA","N/A"))
+
+# Load data from the world-happiness csv file for 2018 and 2019:
+theUrl.happ.2018 <- 'https://raw.githubusercontent.com/kamathvk1982/Data606-FinalProject/master/data/world-happiness-2018.csv'
+happ.2018 <- read_csv(theUrl.happ.2018,  na = c("", "NA","N/A"))
+theUrl.happ.2019 <- 'https://raw.githubusercontent.com/kamathvk1982/Data606-FinalProject/master/data/world-happiness-2019.csv'
+happ.2019 <- read_csv(theUrl.happ.2019,  na = c("", "NA","N/A"))
+
+```
+
+```{r view-raw-data, echo=TRUE}
+# View a summary of the Data Frame along with Row counts:
+dim(lifeExp.df)
+kable(head(lifeExp.df,10))
+
+dim(happ.2018)
+kable(head(happ.2018,10))
+
+dim(happ.2019)
+kable(head(happ.2019,10))
+
+```
+
+
+### Research question 
+
+**You should phrase your research question in a way that matches up with the scope of inference your dataset allows for.**
+
+1. Country in top 10 rank for happiness, have higher `Life Expectancy (years)` ?
+2. Does higher `Life Expectancy (years)` countries are also most Happy (For 2019)?
+3. Are people, in a given country, happier in 2019 then they were 2018?
+4. Does being `Generous` make people happy ?
+5. Does having `Freedom to make life choices` make people happy ?
+
+
+### Cases  
+
+**What are the cases, and how many are there?** 
+  
+1. Each case in the Happiness dataset is for a given Country and shows its rank, score and other parameter score. There are 156 cases in each 2018 and 2019 dataset.   
+  
+2. Each case in the Life Expectancy dataset is for a Given country and year and shows its life expectancy for the year.  There are 19028 cases in the dataset.  
+
+
+### Data collection 
+
+**Describe the method of data collection.**  
+The data was collected from Kaggle, but the original source for the data is World Bank Data. 
+
+
+### Type of study 
+
+**What type of study is this (observational/experiment)?**  
+
+This is an observational study. We are looking at data for year 2018 and 2019 for the countries in the world.
+
+
+### Data Source 
+
+**If you collected the data, state self-collected. If not, provide a citation/link.**  
+
+The data was collected from below sites:  
+Life Expectancy (WHO) data is found [here](https://www.kaggle.com/albeffe/life-expectancy-per-country-from-1543-to-2019).  
+World Happiness Report data is found [here](https://www.kaggle.com/unsdsn/world-happiness/data).
+
+
+### Dependent Variable
+
+**What is the response variable? Is it quantitative or qualitative?**  
+The response variable is the `Score` variable and its quantitative (numerical).  
+
+
+### Independent Variable
+
+**You should have two independent variables, one quantitative and one qualitative.**  
+The independent variables are the `Life expectancy (years)` variable and the other  variable is `Generosity` in the happiness dataset; Both these are quantitative (numerical).
+
+
+### Relevant summary statistics 
+
+**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**  
+
+##### 1. Summary Statistics for each dataframe is as below:
+```{r}
+summary(lifeExp.df)
+summary(happ.2018)
+summary(happ.2019)
+```
+
+* * * 
+
+##### 2. Getting Top ten happy country in 2018 and 2019 and getting their life expectancy:
+```{r}
+# We will get the Top 10 ranked Happy countries in 2018:
+top.10.2018 <- happ.2018 %>%
+  filter(happ.2018$"Overall rank" < 11 ) %>%
+  select("Overall rank", "Country or region") %>%
+  mutate(Year = 2018)
+
+# Next, We will get the Top 10 ranked Happy countries in 2019:
+top.10.2019 <- happ.2019 %>%
+  filter(happ.2018$"Overall rank" < 11 )  %>%
+  select("Overall rank", "Country or region")%>%
+  mutate(Year = 2019)
+
+# We will bind the above tow dataset into one:
+top.10.new <- rbind(top.10.2018, top.10.2019)
+
+# Next, we work on the Life Expectancy Dataset to get 2018 and 2019 data:
+lifeExp.df.new <- lifeExp.df %>%
+  filter(lifeExp.df$Year == 2018 | lifeExp.df$Year == 2019 ) 
+
+# Now, joining the above tow final data sets of Happieness and Life Expectancy 
+# we can check the life expectany for happier countries:  
+top.10.hap.life <- inner_join(lifeExp.df.new, top.10.new, 
+                              by = c(Entity="Country or region" , "Year" = "Year") ) %>%
+  arrange(Entity, Year)
+
+kable(top.10.hap.life)
+
+```
+
+ **=> We can see that the happier the country is the higher the life expectancy it has.**  
+  
+* * * 
+
+##### 3. Does higher Life Expectancy (years) countries are also most Happy (for 2019) :
+```{r}
+# Getting the 2019 data and then getting top 10 life expentancy countries:
+lifeExp.df.2019 <- lifeExp.df %>%
+  filter(Year == 2019)
+
+top.10.life <- top_n(lifeExp.df.2019, 10, lifeExp.df.2019$"Life expectancy (years)") 
+
+# We are using Left join here as not all countries data is avialble in Happ.2019:
+df.main <- left_join(top.10.life,happ.2019,  by=c( "Entity"="Country or region" ))
+
+kable(df.main)
+
+ggplot(df.main) +
+  geom_point(aes(x=df.main$"Overall rank", y=df.main$"Life expectancy (years)"
+                 , colour = factor(Entity)) ) 
+```
+
+ **=> By checking the Rank and Score for these 5 countries we can say that higher life
+ expectancy does not lead to Higher Happiness.**  
+  
+* * * 
+
+##### 4. Are people, in a given country, happier in 2019 then they were 2018 :
+```{r}
+# We can check this by comparing score of the country in 2018 vs that in 2019 and see 
+# if they dropped by a margin of more then 0.25 basis:
+df.main1 <- inner_join(happ.2018 , happ.2019, by=c("Country or region" = "Country or region") 
+           ,  suffix=c(".2018",".2019")  ) %>%
+  filter(Score.2018 - Score.2019 >= 0.25) %>%
+  select ("Country or region", "Overall rank.2018","Score.2018", "Overall rank.2019", "Score.2019") %>%
+  mutate(Margin.Diff = Score.2018 - Score.2019) %>%
+  arrange(desc(Margin.Diff))
+
+kable(df.main1)
+
+barplot(df.main1$Margin.Diff, names.arg=df.main1$"Country or region", las=2,cex.names=0.7 
+        , main="Less happy in 2019 compared to 2018") 
+
+```  
+  
+  **=> There are 9 (out of 156) countries that were less happy in 2019 compared to 2018.**  
+
+* * * 
+
+##### 5. Checking `Generosity` :
+```{r}
+# We can get the min, max and mean of the Score for first 10 ranked Countries 
+# and compare aginst the same for first 10 `Generous` countries:
+
+# Min, Max and Mean for top 10 ranked countries:
+top_n( happ.2018, -10, happ.2018$"Overall rank" ) %>%
+  select(Score) %>%
+  summary(Score)
+
+# Min, Max and Mean for top 10 `Generous` countries:
+top_n( happ.2018, 10, Generosity ) %>%
+  select(Score) %>%
+  summary(Score)
+
+boxplot(c(top_n( happ.2018, -10, happ.2018$"Overall rank" ) %>%
+  select(Score), top_n( happ.2018, 10, Generosity ) %>%
+  select(Score)  ) )
+
+```
+
+ **=> By comparing the three attributes Min, Max and mean, we can say that 
+ being `Generous` does not lead to being Happy.**  
+  
+* * * 
+
+##### 6. Checking `Freedom to make life choices` :
+```{r}
+# We can get the min, max and mean of the Score for first 10 ranked Countries 
+# and compare aginst the same for first 10 `Freedom to make life choices` countries:
+
+# Min, Max and Mean for top 10 ranked countries:
+top_n( happ.2018, -10, happ.2018$"Overall rank" ) %>%
+  select(Score) %>%
+  summary(Score)
+
+# Min, Max and Mean for top 10 `Freedom to make life choices` countries:
+top_n( happ.2018, 10, happ.2018$"Freedom to make life choices" ) %>%
+  select(Score) %>%
+  summary(Score)
+
+boxplot(c(top_n( happ.2018, -10, happ.2018$"Overall rank" ) %>%
+  select(Score), top_n( happ.2018, 10, happ.2018$"Freedom to make life choices" ) %>%
+  select(Score) ) )
+
+```
+
+ **=> By comparing the three attributes Min, Max and mean, we can say that 
+ having `Freedom to make life choices` does lead to being Happy. The mean 
+ is close to the top ranked mean and max score matches.**  
+
+* * * 
+
+
+***We can make a lot of linear regression comparisons between various variables, 
+comparing it to happiness `Score`, and use various other statistical inference 
+techniques to determine best variables to use.***
+
+* * *
